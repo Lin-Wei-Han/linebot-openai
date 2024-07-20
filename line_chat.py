@@ -63,5 +63,5 @@ def get_openai_reply(user_message):
     return response_json['choices'][0]['message']['content']
 
 if __name__ == '__main__':
-    print(get_openai_reply("寶貝今天開心嘛！"))
-    #app.run(port=8000)
+    #print(get_openai_reply("寶貝今天開心嘛！"))
+    app.run(port=8000)
