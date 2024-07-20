@@ -22,12 +22,12 @@ def callback():
             message_type = event['message']['type']
             reply_token = event['replyToken']
             
-            if message_type == 'sticker':
-                reply_message(reply_token, "貓貓，鹿鹿看不懂貼圖")
-            elif message_type == 'text':
+            if message_type == 'text':
                 user_message = event['message']['text']
                 assistant_message = get_openai_reply(user_message)
                 reply_message(reply_token, assistant_message)
+            else:
+                reply_message(reply_token, "貓貓，鹿鹿看不懂這個")
 
     return jsonify({'status': 'success'}), 200
 
