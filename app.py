@@ -13,6 +13,9 @@ FINETUNE_MODEL_ID = 'gpt-4o-mini'
 with open('./data/reference.txt', 'r', encoding='utf-8') as f:
     system_data = f.read()
 
+# 儲存訊息紀錄
+message_history = []
+
 @app.route('/callback', methods=['POST'])
 def callback():
     body = request.json
@@ -45,6 +48,16 @@ def reply_message(reply_token, text):
     requests.post('https://api.line.me/v2/bot/message/reply', headers=headers, json=body)
 
 def get_openai_reply(user_message):
+    # 更新訊息紀錄
+    message_history.append({"role": "user", "content": user_message})
+    
+    # 保留最近五則訊息
+    if len(message_history) > 10:
+        message_history.pop(0)
+    
+    # 組織對話上下文
+    messages = [{"role": "system", "content": system_data}] + message_history
+
     headers = {
         'Content-Type': 'application/json',
         'Authorization': f'Bearer {OPENAI_API_KEY}'
@@ -52,15 +65,21 @@ def get_openai_reply(user_message):
 
     data = {
         "model": FINETUNE_MODEL_ID,
-        "messages": [
-            {"role": "system", "content": system_data},
-            {"role": "user", "content": user_message}
-        ]
+        "messages": messages
     }
 
     response = requests.post('https://api.openai.com/v1/chat/completions', headers=headers, json=data)
     response_json = response.json()
-    return response_json['choices'][0]['message']['content']
+    
+    # 添加助手的回覆到訊息紀錄
+    assistant_message = response_json['choices'][0]['message']['content']
+    message_history.append({"role": "assistant", "content": assistant_message})
+    
+    # 保留最近五則訊息
+    if len(message_history) > 10:
+        message_history.pop(0)
+    
+    return assistant_message
 
 if __name__ == '__main__':
     app.run(port=8000)
