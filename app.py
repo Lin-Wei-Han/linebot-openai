@@ -16,6 +16,10 @@ with open('./data/reference.txt', 'r', encoding='utf-8') as f:
 # 儲存訊息紀錄
 message_history = []
 
+@app.route('/')
+def home():
+    return ''
+
 @app.route('/callback', methods=['POST'])
 def callback():
     body = request.json
@@ -25,6 +29,7 @@ def callback():
             message_type = event['message']['type']
             reply_token = event['replyToken']
             user_id = event['source']['userId']  # 獲取用戶ID
+            print(event)
             
             if message_type == 'text':
                 user_message = event['message']['text']
