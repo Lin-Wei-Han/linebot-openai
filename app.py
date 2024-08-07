@@ -28,13 +28,13 @@ def callback():
         if event['type'] == 'message':
             message_type = event['message']['type']
             reply_token = event['replyToken']
-            user_id = event['source']['userId']  # 獲取用戶ID
-            print(event)
+            # user_id = event['source']['userId']  # 獲取用戶ID
+            # print(event)
             
             if message_type == 'text':
                 user_message = event['message']['text']
                 assistant_message = get_openai_reply(user_message)
-                reply_message(reply_token, f"用戶ID是: {user_id} /n {assistant_message}")
+                reply_message(reply_token, assistant_message)
             else:
                 reply_message(reply_token, "貓貓，鹿鹿看不懂這個")
 
