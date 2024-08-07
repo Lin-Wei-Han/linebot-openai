@@ -1,5 +1,8 @@
 from flask import Flask, request, jsonify
+import threading
+import schedule
 import requests
+import time
 import os
 
 app = Flask(__name__)
@@ -81,5 +84,69 @@ def get_openai_reply(user_message):
     
     return assistant_message
 
+# 取得用戶 id 清單
+def get_followers():
+    url = 'https://api.line.me/v2/bot/followers/ids'
+    headers = {
+        'Authorization': f'Bearer {LINE_CHANNEL_ACCESS_TOKEN}'
+    }
+    
+    follower_ids = []
+    next_cursor = None
+    
+    while True:
+        params = {'limit': 1000}
+        if next_cursor:
+            params['start'] = next_cursor
+        
+        response = requests.get(url, headers=headers, params=params)
+        data = response.json()
+        
+        follower_ids.extend(data['userIds'])
+        
+        if 'next' in data:
+            next_cursor = data['next']
+        else:
+            break
+    
+    return follower_ids
+
+def send_push_message(user_id, message):
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {LINE_CHANNEL_ACCESS_TOKEN}'
+    }
+
+    body = {
+        'to': user_id,
+        'messages': [{'type': 'text', 'text': message}]
+    }
+
+    response = requests.post('https://api.line.me/v2/bot/message/push', headers=headers, json=body)
+    return response.status_code == 200
+
+def send_scheduled_messages():
+    follower_ids = get_followers()
+    messages = [
+        "早安！這是今天的第一則訊息。",
+        "這是第二則訊息。祝您有美好的一天！"
+    ]
+    
+    for user_id in follower_ids:
+        for message in messages:
+            send_push_message(user_id, message)
+
+def run_scheduler():
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+
 if __name__ == '__main__':
+    # 設定排程任務
+    schedule.every().monday.to_friday.at("12:35").do(send_scheduled_messages)
+    
+    # 在獨立的線程中運行排程器
+    scheduler_thread = threading.Thread(target=run_scheduler)
+    scheduler_thread.start()
+
     app.run(port=8000)
